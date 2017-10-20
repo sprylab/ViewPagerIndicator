@@ -25,7 +25,7 @@ public class SampleTabsStyled extends FragmentActivity {
         indicator.setViewPager(pager);
     }
 
-    class GoogleMusicAdapter extends FragmentPagerAdapter {
+    static class GoogleMusicAdapter extends FragmentPagerAdapter {
         public GoogleMusicAdapter(FragmentManager fm) {
             super(fm);
         }

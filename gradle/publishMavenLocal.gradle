@@ -1,0 +1,92 @@
+apply plugin: 'maven-publish'
+
+project.afterEvaluate {
+    def androidExtension = project.extensions.findByName("android")
+    if (androidExtension.hasProperty('libraryVariants')) {
+        androidExtension.libraryVariants.all { final variant ->
+            task("${variant.name}Javadoc", type: Javadoc) {
+                description "Generates Javadoc for ${variant.name}."
+                failOnError = false
+                source = variant.javaCompile.source
+                classpath = files(variant.javaCompile.classpath.files, project.android.getBootClasspath())
+                exclude '**/BuildConfig.java'
+                exclude '**/R.java'
+                exclude '**/com/android/**/*.java'
+                exclude '**/com/madrobot/**/*.java'
+            }
+        }
+    }
+    task androidJavadocsJar(type: Jar, dependsOn: 'releaseJavadoc') {
+        classifier = 'javadoc'
+        from {
+            releaseJavadoc.destinationDir
+        }
+    }
+    task androidSourcesJar(type: Jar) {
+        classifier = 'sources'
+        from androidExtension.sourceSets.main.java.srcDirs
+    }
+    publishing.publications {
+        release(MavenPublication) {
+            groupId project.group
+            artifactId project.name
+            version project.version
+
+            artifact bundleRelease
+            artifact androidJavadocsJar
+            artifact androidSourcesJar
+
+
+            pom.withXml {
+                // List all compile dependencies and write to POM
+                final Node dependenciesNode = asNode().appendNode('dependencies')
+                final compileConfiguration = configurations.getByName('compile')
+                compileConfiguration.allDependencies.each { final Dependency dependency ->
+                    final noGroup = dependency.group == null
+                    final noVersion = dependency.version == null
+                    final noName = dependency.name == null
+                    final invalidName = dependency.name == "unspecified"
+                    final invalidDependency = noGroup || noVersion || noName || invalidName
+                    if (invalidDependency) {
+                        // ignore invalid dependencies
+                        return
+                    }
+                    final dependencyFiles = compileConfiguration.files(dependency)
+                    final firstFile = dependencyFiles.first()
+                    final firstFileName = firstFile.name
+                    final firstFileNameExtension = firstFileName.substring(firstFileName.lastIndexOf(".") + 1)
+
+                    final dependencyNode = dependenciesNode.appendNode('dependency')
+                    dependencyNode.appendNode('groupId', dependency.group)
+                    dependencyNode.appendNode('artifactId', dependency.name)
+                    dependencyNode.appendNode('version', dependency.version)
+                    if (firstFileNameExtension != "jar") {
+                        dependencyNode.appendNode('type', firstFileNameExtension)
+                    }
+
+                    if (!dependency.transitive) {
+                        // If this dependency is transitive, we should force exclude all its dependencies them from the POM
+                        final exclusionNode = dependencyNode.appendNode('exclusions').appendNode('exclusion')
+                        exclusionNode.appendNode('groupId', '*')
+                        exclusionNode.appendNode('artifactId', '*')
+                    } else if (!dependency.properties.excludeRules.empty) {
+                        // Otherwise add specified exclude rules
+                        final exclusionsNode = dependencyNode.appendNode('exclusions')
+                        dependency.properties.excludeRules.each { final ExcludeRule rule ->
+                            final exclusionNode = exclusionsNode.appendNode('exclusion')
+                            exclusionNode.appendNode('groupId', rule.group ?: '*')
+                            exclusionNode.appendNode('artifactId', rule.module ?: '*')
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+publishing {
+    repositories {
+        maven {
+            url "$rootProject.buildDir/m2repository"
+        }
+    }
+}

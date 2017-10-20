@@ -541,6 +541,7 @@ public class TitlePageIndicator extends View implements PageIndicator {
         }
     }
 
+    @Override
     public boolean onTouchEvent(android.view.MotionEvent ev) {
         if (super.onTouchEvent(ev)) {
             return true;

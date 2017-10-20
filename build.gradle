@@ -1,0 +1,80 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+buildscript {
+    ext {
+        // Plugin versions
+        androidGradleVersion = "3.0.0-rc2"
+        errorProneGradleVersion = "0.0.13"
+        gradleVersionsVersion = "0.15.0"
+    }
+    repositories {
+        google()
+        jcenter()
+        mavenCentral()
+        maven { url "https://plugins.gradle.org/m2/" }
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:$androidGradleVersion"
+        classpath "net.ltgt.gradle:gradle-errorprone-plugin:$errorProneGradleVersion"
+        classpath "com.github.ben-manes:gradle-versions-plugin:$gradleVersionsVersion"
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+group "com.sprylab.android.viewpagerindicator"
+version "2.4.1-sprylab-SNAPSHOT"
+
+subprojects {
+    group project.parent.group
+    version project.parent.version
+
+    repositories {
+        google()
+        jcenter()
+        mavenCentral()
+    }
+
+    project.ext {
+        // Configuration
+        minSdk = 14
+        compileSdk = 26
+        targetSdk = 26
+
+        // Versions
+        libraryVersionName = project.version
+        libraryVersionCode = 2004001
+
+        // Dependencies - Test
+        junitVersion = "4.12"
+        robolectricVersion = "3.4.2"
+
+        // Dependencies - Runtime
+        supportLibVersion = "26.1.0"
+
+        errorProneVersion = "2.1.2"
+    }
+
+    // Configure java compiler for error prone
+    tasks.withType(JavaCompile) {
+        options.compilerArgs += ['-XDallowBetterNullChecks=false',
+                                 '-Xep:OvershadowingSubclassFields:ERROR',
+                                 '-Xep:MissingOverride:ERROR',
+                                 '-Xep:JavaLangClash:ERROR',
+                                 '-Xep:ClassCanBeStatic:ERROR',
+                                 '-Xep:MissingCasesInEnumSwitch:WARN',
+                                 '-Xep:CheckReturnValue:WARN',
+                                 '-Xep:RestrictTo:WARN',
+                                 '-Xep:TypeParameterUnusedInFormals:OFF'
+        ]
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.2.1'
+    distributionType = "all"
+}

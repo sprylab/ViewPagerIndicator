@@ -1,0 +1,52 @@
+apply plugin: 'com.android.application'
+apply plugin: 'net.ltgt.errorprone'
+apply plugin: 'checkstyle'
+apply plugin: 'com.github.ben-manes.versions'
+
+android {
+    compileSdkVersion project.ext.compileSdk
+
+    defaultConfig {
+        applicationId "com.viewpagerindicator.sample"
+        minSdkVersion project.ext.minSdk
+        targetSdkVersion project.ext.targetSdk
+        versionCode project.ext.libraryVersionCode
+        versionName project.ext.libraryVersionName
+    }
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+            all { ignoreFailures = true }
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+checkstyle {
+    configFile rootProject.file('checkstyle.xml')
+}
+
+dependencies {
+    // Testing
+    testImplementation "junit:junit:${project.ext.junitVersion}"
+    testImplementation "org.robolectric:robolectric:${project.ext.robolectricVersion}"
+
+    // ViewPagerIndicator
+    implementation project(':library')
+
+    // Support Library
+    implementation "com.android.support:support-v4:${project.ext.supportLibVersion}"
+
+    // Error Prone
+    errorprone "com.google.errorprone:error_prone_core:${project.ext.errorProneVersion}"
+
+}
